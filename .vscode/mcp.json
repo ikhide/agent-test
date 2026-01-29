@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "screen-capture": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["mcp/server.js"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

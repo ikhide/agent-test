@@ -1,154 +1,326 @@
-# Copilot Agent Orchestrator
+# Copilot Multi-Agent Orchestrator
 
-Multi-agent orchestration system with MCP tools for GitHub Copilot.
+A multi-agent orchestration system using GitHub Copilot's native agent files (`.agent.md`) and MCP tools.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    GitHub Copilot                        │
-│             @testOrc run screen process                  │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│           Orchestrator (Routes Commands)                 │
-│                                                          │
-│   "run screen process" → Screen Agent                    │
-│   "run <command>"      → Appropriate Agent               │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Agents Layer                          │
-├─────────────────────────────────────────────────────────┤
-│  Screen Agent        │  (Future Agents)                  │
-│  - snapshot-tool     │  - data-agent                     │
-│  - ocr-extract-tool  │  - review-agent                   │
-└──────────────────────┴──────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│                    MCP Tools                             │
-├─────────────────────┬───────────────────────────────────┤
-│  MCP1: snapshot     │  MCP2: ocr-extract                 │
-│  Takes screenshot   │  Extracts text via Tesseract       │
-│  Saves to snapshots/│  Saves to output/text.txt          │
-└─────────────────────┴───────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     GitHub Copilot Chat                          │
+│                                                                  │
+│   User: "run screen process"                                     │
+│   Agent Dropdown: [orchestrator ▼]                               │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                      ORCHESTRATOR                                │
+│                  (orchestrator.agent.md)                         │
+│                                                                  │
+│   • Receives user commands                                       │
+│   • Routes to appropriate sub-agent                              │
+│   • Ensures consistent workflow execution                        │
+│   • Coordinates multi-agent sequences                            │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │ handoff
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                       AGENTS LAYER                               │
+├────────────────────┬─────────────────────┬───────────────────────┤
+│   screen-agent     │    data-agent       │     agent-n           │
+│   (implemented)    │    (future)         │     (future)          │
+│                    │                     │                       │
+│   Screenshot +     │    Data analysis    │     Custom            │
+│   OCR workflow     │    workflows        │     workflows         │
+└─────────┬──────────┴─────────────────────┴───────────────────────┘
+          │ handoff back
+          ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                      ORCHESTRATOR                                │
+│                  (ready for next command)                        │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+### Data Flow (Hub-and-Spoke Pattern)
 
-```bash
-# Install dependencies
-npm install
+```
+User Command
+     │
+     ▼
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│ Orchestrator│─────►│ Screen Agent │─────►│ Orchestrator│
+│   (route)   │      │  (execute)   │      │  (next?)    │
+└─────────────┘      └──────┬───────┘      └─────────────┘
+                            │
+                     ┌──────┴──────┐
+                     ▼             ▼
+                  ┌─────┐      ┌─────┐
+                  │MCP1 │      │MCP2 │
+                  │snap-│      │ocr- │
+                  │shot │      │extract│
+                  └──┬──┘      └──┬──┘
+                     │            │
+                     ▼            ▼
+               snapshots/    output/text.txt
+```
 
-# Start the orchestrator server
-npm start
+**Why Hub-and-Spoke?**
+- Orchestrator maintains control of the entire workflow
+- Consistent execution across all agents
+- Easy to add new agents without changing existing ones
+- Clear audit trail of which agent did what
+
+## Project Structure
+
+```
+agent-test/
+├── .github/
+│   ├── agents/
+│   │   ├── orchestrator.agent.md    # Parent orchestrator
+│   │   └── screen-agent.agent.md    # Screenshot + OCR agent
+│   └── prompts/
+│       └── screen-process.prompt.md # Quick workflow trigger
+├── .vscode/
+│   └── mcp.json                     # MCP server configuration
+├── mcp/
+│   ├── server.js                    # MCP server (stdio)
+│   └── tools/
+│       ├── snapshot.js              # MCP1: Screenshot tool
+│       └── ocr-extract.js           # MCP2: OCR extraction tool
+├── snapshots/                       # Screenshot output
+├── output/                          # Text extraction output
+└── package.json
 ```
 
 ## Components
 
-### MCP Tools (`mcp/`)
+### 1. Orchestrator Agent
 
-1. **snapshot-tool** - Takes a screenshot and saves to `snapshots/`
-2. **ocr-extract-tool** - Extracts text from image using Tesseract.js, saves to `output/text.txt`
+**File:** `.github/agents/orchestrator.agent.md`
 
-### Agents (`agents/`)
+The parent agent that:
+- Receives all user commands
+- Routes to appropriate sub-agents via handoffs
+- Waits for sub-agents to complete and return
+- Coordinates multi-step workflows
 
-1. **screen-agent** - Coordinates snapshot → OCR → save text workflow
+### 2. Screen Agent
 
-### Orchestrator (`orchestrator/`)
+**File:** `.github/agents/screen-agent.agent.md`
 
-Express server that acts as a GitHub Copilot Extension endpoint.
+A specialized agent that:
+- Takes screenshots using `snapshot-tool` (MCP1)
+- Extracts text using `ocr-extract-tool` (MCP2)
+- Saves results to `output/text.txt`
+- Returns control to orchestrator when done
 
-## GitHub Copilot Extension Setup
+### 3. MCP Tools
 
-1. Create a GitHub App at https://github.com/settings/apps/new
-2. Configure as Copilot Extension:
-   - Set the endpoint URL to your orchestrator server
-   - Enable Copilot Extension features
-3. Install the app in your repository/organization
+**Location:** `mcp/tools/`
 
-### Usage in Copilot
+| Tool | Description | Input | Output |
+|------|-------------|-------|--------|
+| `snapshot-tool` | Captures desktop screenshot | `filename` | `filePath`, `fileSize` |
+| `ocr-extract-tool` | Extracts text from image | `imagePath`, `outputFilename` | `text`, `confidence` |
 
+### 4. MCP Server
+
+**File:** `mcp/server.js`
+
+Exposes tools via the Model Context Protocol (stdio transport). Configured in `.vscode/mcp.json`.
+
+## Quick Start
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Open in VS Code
+code .
+
+# 3. Open Copilot Chat (Ctrl+Shift+I or Cmd+Shift+I)
+
+# 4. Select "orchestrator" from the agent dropdown
+
+# 5. Type your command
+run screen process
 ```
-@testOrc run screen process
+
+## Usage
+
+### Using the Orchestrator (Recommended)
+
+1. Open **Copilot Chat** panel in VS Code
+2. Click the **agent dropdown** at the top
+3. Select **"orchestrator"**
+4. Type: `run screen process`
+
+### Using Screen Agent Directly
+
+1. Select **"screen-agent"** from dropdown
+2. Type: `capture and extract text`
+
+### Using Prompt Shortcut
+
+Type in chat:
 ```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | POST | Copilot Extension endpoint |
-| `/health` | GET | Health check |
-| `/agents` | GET | List available agents |
+/screen-process
+```
 
 ## Adding New Agents
 
-1. Create agent file in `agents/`:
+### Step 1: Create Agent File
 
-```javascript
-// agents/my-agent.js
-export const myAgentDefinition = {
-  name: "my-agent",
-  description: "Description of what the agent does",
-  commands: ["my command", "another command"]
-};
+Create `.github/agents/my-agent.agent.md`:
 
-export async function myAgent(options = {}) {
-  // Agent logic here
-  return { success: true, message: "Done" };
-}
+```markdown
+---
+name: my-agent
+description: What this agent does
+tools: ["my-mcp-server/*"]
+infer: false
+handoffs:
+  - label: "Return to Orchestrator"
+    agent: "orchestrator"
+    prompt: "Task completed. Ready for next command."
+---
+
+# My Agent
+
+Instructions for the agent...
+
+## Workflow Steps
+
+1. Step one
+2. Step two
+3. Return to orchestrator
 ```
 
-2. Register in `agents/index.js`:
+### Step 2: Register with Orchestrator
 
-```javascript
-import { myAgent, myAgentDefinition } from "./my-agent.js";
+Add handoff in `.github/agents/orchestrator.agent.md`:
 
-export const agents = {
-  // ...existing agents
-  "my-agent": {
-    definition: myAgentDefinition,
-    execute: myAgent
-  }
-};
-
-export const commandMapping = {
-  // ...existing mappings
-  "my command": "my-agent"
-};
+```yaml
+handoffs:
+  - label: "Screen Process"
+    agent: "screen-agent"
+    prompt: "Execute the screen capture and OCR workflow"
+  - label: "My New Task"
+    agent: "my-agent"
+    prompt: "Execute the new workflow"
 ```
+
+### Step 3: Update Command Routing
+
+Add routing instructions in orchestrator's markdown body.
 
 ## Adding New MCP Tools
 
-1. Create tool in `mcp/tools/`:
+### Step 1: Create Tool
+
+Create `mcp/tools/my-tool.js`:
 
 ```javascript
-// mcp/tools/my-tool.js
 export const myToolDefinition = {
   name: "my-tool",
-  description: "What the tool does",
+  description: "What it does",
   inputSchema: {
     type: "object",
-    properties: { /* ... */ },
-    required: []
+    properties: {
+      param1: { type: "string", description: "Description" }
+    },
+    required: ["param1"]
   }
 };
 
-export async function myTool(args) {
-  // Tool logic
-  return { success: true };
+export async function myTool(param1) {
+  // Implementation
+  return { success: true, result: "..." };
 }
 ```
 
-2. Register in `mcp/server.js` to expose via MCP protocol.
+### Step 2: Register in MCP Server
 
-## Running MCP Server Standalone
+Update `mcp/server.js`:
 
-```bash
-npm run start:mcp
+```javascript
+import { myToolDefinition, myTool } from "./tools/my-tool.js";
+
+// Add to tools array
+const tools = [snapshotToolDefinition, ocrExtractToolDefinition, myToolDefinition];
+
+// Add case in switch
+case "my-tool":
+  result = await myTool(args.param1);
+  break;
 ```
 
-This starts the MCP server on stdio for use with MCP clients.
+## File Formats Reference
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `*.agent.md` | `.github/agents/` | Define agent personas, tools, and handoffs |
+| `*.prompt.md` | `.github/prompts/` | Define reusable workflow triggers |
+| `mcp.json` | `.vscode/` | Configure MCP servers for VS Code |
+
+### Agent File Schema
+
+```yaml
+---
+name: agent-name              # Identifier
+description: What it does     # Shown in dropdown
+tools: ["tool1", "mcp/*"]     # Available tools
+infer: true|false             # Auto-select based on context
+handoffs:                     # Agents it can delegate to
+  - label: "Display Name"
+    agent: "target-agent"
+    prompt: "Instructions for handoff"
+---
+
+# Markdown instructions for the agent
+```
+
+## Documentation & Resources
+
+### GitHub Copilot Custom Agents
+
+- [Custom Agents in VS Code](https://code.visualstudio.com/docs/copilot/customization/custom-agents) - Creating and configuring agents
+- [Custom Agents Configuration Reference](https://docs.github.com/en/copilot/reference/custom-agents-configuration) - YAML schema
+- [How to Write a Great AGENTS.md](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/) - Best practices
+
+### Model Context Protocol (MCP)
+
+- [MCP Specification](https://modelcontextprotocol.io/) - Official protocol docs
+- [Extending Copilot Chat with MCP](https://docs.github.com/copilot/customizing-copilot/using-model-context-protocol/extending-copilot-chat-with-mcp) - VS Code integration
+- [MCP Servers Repository](https://github.com/modelcontextprotocol/servers) - Example servers
+
+### Prompt Files
+
+- [Prompt Files in VS Code](https://code.visualstudio.com/docs/copilot/customization/prompt-files) - Creating `.prompt.md` files
+
+### Tutorials
+
+- [Agents Tutorial](https://code.visualstudio.com/docs/copilot/agents/agents-tutorial) - Step-by-step guide
+- [Enhance Agent Mode with MCP](https://docs.github.com/en/copilot/tutorials/enhance-agent-mode-with-mcp) - MCP integration tutorial
+
+## Troubleshooting
+
+### Agents not appearing in dropdown
+
+1. Ensure files are in `.github/agents/` folder
+2. Check file extension is `.agent.md`
+3. Verify YAML frontmatter is valid
+4. Reload VS Code window
+
+### MCP tools not working
+
+1. Check `.vscode/mcp.json` configuration
+2. Run `npm install` to ensure dependencies
+3. Verify MCP server starts: `npm run start:mcp`
+4. Check VS Code Output panel for errors
+
+### Handoffs not working
+
+1. Ensure target agent exists in `.github/agents/`
+2. Verify handoff schema has `label`, `agent`, and `prompt`
+3. Check agent names match exactly

@@ -5,7 +5,10 @@
 /logs
 *.log
 /coverage
-/.vscode
 .idea/
 *.iml
 
+# Generated files (keep directories but ignore contents)
+/snapshots/*.png
+/snapshots/*.jpg
+/output/*.txt
