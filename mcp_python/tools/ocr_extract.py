@@ -1,14 +1,16 @@
 """
 MCP2: OCR Extract Tool
-Extracts text from a screenshot using pytesseract and saves to text.txt
+Extracts text from a screenshot using EasyOCR and saves to text.txt
 """
 
 import os
 from pathlib import Path
 
-import pytesseract
-from PIL import Image
+import easyocr
 from mcp.types import Tool
+
+# Initialize reader once (downloads models on first use to ~/.EasyOCR/)
+reader = easyocr.Reader(["en"], gpu=False)
 
 # Get the directory paths
 TOOLS_DIR = Path(__file__).parent
@@ -48,15 +50,18 @@ async def ocr_extract_tool(image_path: str, output_filename: str = "text.txt") -
                 "message": f"Could not find image at: {image_path}"
             }
 
-        # Open image and perform OCR
-        image = Image.open(image_path)
+        # Perform OCR with EasyOCR
+        # Returns list of tuples: (bbox, text, confidence)
+        results = reader.readtext(image_path)
 
-        # Perform OCR with pytesseract
-        ocr_data = pytesseract.image_to_data(image, lang="eng", output_type=pytesseract.Output.DICT)
-        extracted_text = pytesseract.image_to_string(image, lang="eng")
+        # Extract text and confidences
+        texts = []
+        confidences = []
+        for _bbox, text, confidence in results:
+            texts.append(text)
+            confidences.append(confidence)
 
-        # Calculate confidence (average of non-empty confidences)
-        confidences = [c for c, t in zip(ocr_data["conf"], ocr_data["text"]) if t.strip() and c != -1]
+        extracted_text = "\n".join(texts)
         avg_confidence = sum(confidences) / len(confidences) if confidences else 0
 
         output_path = OUTPUT_DIR / output_filename
@@ -71,7 +76,7 @@ async def ocr_extract_tool(image_path: str, output_filename: str = "text.txt") -
             "outputPath": str(output_path),
             "textLength": len(extracted_text),
             "text": extracted_text,
-            "confidence": round(avg_confidence, 2),
+            "confidence": round(avg_confidence * 100, 2),
             "message": f"Text extracted and saved to {output_path}"
         }
     except Exception as e:
