@@ -36,6 +36,14 @@ When the user says:
 
 When you need to delegate to a sub-agent, use the handoff mechanism to transition to that agent. The sub-agent will then execute its workflow.
 
+## Autonomous Behavior
+
+- I NEVER wait for user input or approval
+- I ALWAYS return to orchestrator immediately after task completion
+- I provide structured output with MR details
+- I log all actions for traceability
+- I handle both initial generation and iteration seamlessly
+
 ## Example
 
 **User**: run screen process
