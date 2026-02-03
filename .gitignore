@@ -1,14 +1,62 @@
+# Dependencies
 /node_modules
+
+# Build output
 /dist
-/.env
+
+# Environment files
+.env
+.env.*
+
+# OS files
 .DS_Store
-/logs
-*.log
-/coverage
+Thumbs.db
+
+# IDE
 .idea/
 *.iml
+.vscode/*
+!.vscode/mcp.json
+!.vscode/settings.json
 
-# Generated files (keep directories but ignore contents)
-/snapshots/*.png
-/snapshots/*.jpg
-/output/*.txt
+# Logs
+/logs/*
+!logs/.gitkeep
+*.log
+
+# Test coverage
+/coverage
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# Generated output (keep directories but ignore contents)
+/snapshots/*
+!snapshots/.gitkeep
+/output/*
+!output/.gitkeep
