@@ -1,0 +1,20 @@
+{
+  "orchestrator": {
+    "logDestination": "logs/orchestrator.log",
+    "logFormat": "jsonl"
+  },
+  "screen-agent": {
+    "textExtractor": "OCR-TOOL",
+    "extractorOptions": {
+      "OCR-TOOL": {
+        "outputPath": "output/text.txt",
+        "saveToFile": true
+      },
+      "LLM": {
+        "outputPath": "output/text.txt",
+        "saveToFile": true,
+        "prompt": "Extract all visible text from this screenshot. Return only the extracted text, no commentary."
+      }
+    }
+  }
+}

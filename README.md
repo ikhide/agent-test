@@ -81,6 +81,7 @@ agent-test/
 │       └── screen-agent.agent.md    # Screenshot + OCR agent
 ├── .vscode/
 │   └── mcp.json                     # MCP server configuration
+├── agent-config.json                # Agent configuration file
 ├── mcp_python/
 │   ├── server.js                    # MCP server (stdio)
 │   └── tools/
@@ -112,8 +113,8 @@ The parent agent that:
 
 A specialized agent that:
 
-- Takes screenshots using `snapshot-tool` (MCP1)
-- Extracts text using `ocr-extract-tool` (MCP2)
+- Takes screenshots using `snapshot-tool` (MCP)
+- Extracts text using configurable method (`OCR-TOOL` or `LLM`)
 - Saves results to `output/text.txt`
 - Returns control to orchestrator when done
 
@@ -128,9 +129,51 @@ A specialized agent that:
 
 ### 4. MCP Server
 
-**File:** `mcp/server.js`
+**File:** `mcp_python/server.py`
 
 Exposes tools via the Model Context Protocol (stdio transport). Configured in `.vscode/mcp.json`.
+
+## Configuration
+
+**File:** `agent-config.json`
+
+Configure agent behavior without modifying agent files:
+
+```json
+{
+  "orchestrator": {
+    "logDestination": "logs/orchestrator.log",
+    "logFormat": "jsonl"
+  },
+  "screen-agent": {
+    "textExtractor": "OCR-TOOL",
+    "extractorOptions": {
+      "OCR-TOOL": {
+        "outputPath": "output/text.txt",
+        "saveToFile": true
+      },
+      "LLM": {
+        "outputPath": "output/text.txt",
+        "saveToFile": true,
+        "prompt": "Extract all visible text from this screenshot."
+      }
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Agent        | Setting          | Values              | Description                            |
+| ------------ | ---------------- | ------------------- | -------------------------------------- |
+| orchestrator | `logDestination` | file path or URL    | Where to write activity logs           |
+| orchestrator | `logFormat`      | `jsonl`             | Log format (JSON lines)                |
+| screen-agent | `textExtractor`  | `OCR-TOOL` or `LLM` | Method for extracting text from images |
+
+### Text Extraction Methods
+
+- **OCR-TOOL**: Uses the `ocr-extract-tool` MCP tool (EasyOCR-based). Best for accuracy and structured text.
+- **LLM**: Uses the agent's vision capabilities to read the screenshot directly. Best for understanding context and layout.
 
 ## Quick Start
 
@@ -253,10 +296,11 @@ case "my-tool":
 
 ## File Formats Reference
 
-| File         | Location          | Purpose                                    |
-| ------------ | ----------------- | ------------------------------------------ |
-| `*.agent.md` | `.github/agents/` | Define agent personas, tools, and handoffs |
-| `mcp.json`   | `.vscode/`        | Configure MCP servers for VS Code          |
+| File                | Location          | Purpose                                    |
+| ------------------- | ----------------- | ------------------------------------------ |
+| `*.agent.md`        | `.github/agents/` | Define agent personas, tools, and handoffs |
+| `agent-config.json` | `./`              | Configure agent runtime behavior           |
+| `mcp.json`          | `.vscode/`        | Configure MCP servers for VS Code          |
 
 ### Agent File Schema
 

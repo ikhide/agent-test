@@ -88,16 +88,32 @@ Behavior:
 - Always relay the payload to the user and be ready for the next command.
 - Do not request retries automatically; return control and await the next instruction.
 
+## Configuration
+
+**ALWAYS** read `agent-config.json` at the start of each session to get your settings:
+
+```json
+{
+  "orchestrator": {
+    "logDestination": "logs/orchestrator.log",
+    "logFormat": "jsonl"
+  }
+}
+```
+
+- `logDestination`: Where to write logs (file path or URL)
+- `logFormat`: Log format (`jsonl` for JSON lines)
+
 ## Logging
 
-After receiving a JSON summary from any sub-agent, **always** append it to a log file:
+After receiving a JSON summary from any sub-agent, **always** append it to the configured log destination:
 
-1. **Log location**: `logs/orchestrator.log`
+1. **Read config**: Check `agent-config.json` for `orchestrator.logDestination`
 2. **Log format**: Each entry should be a timestamped JSON line:
    ```
    {"timestamp": "YYYY-MM-DDTHH:MM:SS", "agent": "<agent-name>", "result": <JSON payload>}
    ```
-3. **Create the `logs/` folder** if it doesn't exist
+3. **Create the parent folder** if it doesn't exist
 4. **Append** to the log file (don't overwrite previous entries)
 
 Example log entry:
