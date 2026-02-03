@@ -75,11 +75,9 @@ User Command
 ```
 agent-test/
 ├── .github/
-│   ├── agents/
-│   │   ├── orchestrator.agent.md    # Parent orchestrator
-│   │   └── screen-agent.agent.md    # Screenshot + OCR agent
-│   └── prompts/
-│       └── screen-process.prompt.md # Quick workflow trigger
+│   └── agents/
+│       ├── orchestrator.agent.md    # Parent orchestrator
+│       └── screen-agent.agent.md    # Screenshot + OCR agent
 ├── .vscode/
 │   └── mcp.json                     # MCP server configuration
 ├── mcp/
@@ -159,13 +157,6 @@ run screen process
 
 1. Select **"screen-agent"** from dropdown
 2. Type: `capture and extract text`
-
-### Using Prompt Shortcut
-
-Type in chat:
-```
-/screen-process
-```
 
 ## Adding New Agents
 
@@ -260,7 +251,6 @@ case "my-tool":
 | File | Location | Purpose |
 |------|----------|---------|
 | `*.agent.md` | `.github/agents/` | Define agent personas, tools, and handoffs |
-| `*.prompt.md` | `.github/prompts/` | Define reusable workflow triggers |
 | `mcp.json` | `.vscode/` | Configure MCP servers for VS Code |
 
 ### Agent File Schema
@@ -293,10 +283,6 @@ handoffs:                     # Agents it can delegate to
 - [MCP Specification](https://modelcontextprotocol.io/) - Official protocol docs
 - [Extending Copilot Chat with MCP](https://docs.github.com/copilot/customizing-copilot/using-model-context-protocol/extending-copilot-chat-with-mcp) - VS Code integration
 - [MCP Servers Repository](https://github.com/modelcontextprotocol/servers) - Example servers
-
-### Prompt Files
-
-- [Prompt Files in VS Code](https://code.visualstudio.com/docs/copilot/customization/prompt-files) - Creating `.prompt.md` files
 
 ### Tutorials
 

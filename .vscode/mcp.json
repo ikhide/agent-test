@@ -2,7 +2,7 @@
   "servers": {
     "screen-capture": {
       "type": "stdio",
-      "command": "python3",
+      "command": "python",
       "args": ["mcp_python/server.py"],
       "cwd": "${workspaceFolder}"
     }

@@ -4,9 +4,7 @@
   "description": "Multi-agent orchestrator with MCP tools for GitHub Copilot",
   "type": "module",
   "scripts": {
-    "start:mcp": "node mcp/server.js",
-    "start:orchestrator": "node orchestrator/server.js",
-    "start": "node orchestrator/server.js"
+    "start:mcp": "node mcp/server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
