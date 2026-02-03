@@ -20,7 +20,7 @@ A multi-agent orchestration system using GitHub Copilot's native agent files (`.
 │   • Receives user commands                                       │
 │   • Routes to appropriate sub-agent                              │
 │   • Ensures consistent workflow execution                        │
-│   • Coordinates multi-agent sequences                            │
+│   • Logs results to logs/orchestrator.log                        │
 └──────────────────────────┬───────────────────────────────────────┘
                            │ handoff
                            ▼
@@ -88,6 +88,7 @@ agent-test/
 │       └── ocr-extract.py           # MCP2: OCR extraction tool
 ├── snapshots/                       # Screenshot output
 ├── output/                          # Text extraction output
+├── logs/                            # Orchestrator activity logs
 └── package.json
 ```
 
@@ -103,6 +104,7 @@ The parent agent that:
 - Routes to appropriate sub-agents via handoffs
 - Waits for sub-agents to complete and return
 - Coordinates multi-step workflows
+- Logs all agent results to `logs/orchestrator.log`
 
 ### 2. Screen Agent
 

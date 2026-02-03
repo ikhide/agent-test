@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Routes commands to specialized sub-agents for multi-agent workflows
-tools: ["read", "edit", "search", "agent"]
+tools: ["read", "edit", "search", "agent", "createFile"]
 infer: true
 handoffs:
   - label: "Screen Process"
@@ -73,6 +73,23 @@ Failure payload example:
 Behavior:
 - Always relay the payload to the user and be ready for the next command.
 - Do not request retries automatically; return control and await the next instruction.
+
+## Logging
+
+After receiving a JSON summary from any sub-agent, **always** append it to a log file:
+
+1. **Log location**: `logs/orchestrator.log`
+2. **Log format**: Each entry should be a timestamped JSON line:
+   ```
+   {"timestamp": "YYYY-MM-DDTHH:MM:SS", "agent": "<agent-name>", "result": <JSON payload>}
+   ```
+3. **Create the `logs/` folder** if it doesn't exist
+4. **Append** to the log file (don't overwrite previous entries)
+
+Example log entry:
+```json
+{"timestamp": "2025-01-29T14:30:00", "agent": "screen-agent", "result": {"step": "screen-process", "screenshot": {"path": "snapshots/screenshot-20250129-143000.png", "size": 66057}, "ocr": {"output": "output/text.txt", "chars": 1523, "confidence": 94.2}}}
+```
 
 ## How to Hand Off
 
