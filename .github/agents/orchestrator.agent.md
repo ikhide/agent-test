@@ -32,17 +32,52 @@ When the user says:
 - "run screen process" or "capture screen" or "screenshot ocr" → **Hand off to screen-agent**
 - "help" or "list agents" → Show available agents and commands
 
+## Auto Handoff
+
+- On matched commands ("run screen process", "capture screen", "screenshot ocr"), immediately issue the handoff labeled **"Screen Process"** to `screen-agent` without asking for user confirmation.
+- Do not pause for approval; proceed autonomously and await the summary response.
+
+## Result Contract
+
+Expect a single JSON summary payload from `screen-agent` and relay it verbatim to the user.
+
+Success payload example:
+
+```
+{
+  "step": "screen-process",
+  "screenshot": { "path": "snapshots/screenshot-YYYYMMDD-HHMMSS.png", "size": 66057 },
+  "ocr": {
+    "output": "output/text.txt",
+    "chars": 1523,
+    "confidence": 94.2,
+    "textPreview": "<first 200 chars>"
+  }
+}
+```
+
+Failure payload example:
+
+```
+{
+  "step": "screen-process",
+  "screenshot": { "path": "snapshots/screenshot-YYYYMMDD-HHMMSS.png", "size": 66057 },
+  "error": {
+    "type": "ocr_failed|screenshot_failed",
+    "message": "<details>",
+    "hint": "Use Python 3.11 or install a compatible CPU-only Torch wheel."
+  }
+}
+```
+
+Behavior:
+- Always relay the payload to the user and be ready for the next command.
+- Do not request retries automatically; return control and await the next instruction.
+
 ## How to Hand Off
 
 When you need to delegate to a sub-agent, use the handoff mechanism to transition to that agent. The sub-agent will then execute its workflow.
 
-## Autonomous Behavior
-
-- I NEVER wait for user input or approval
-- I ALWAYS return to orchestrator immediately after task completion
-- I provide structured output with MR details
-- I log all actions for traceability
-- I handle both initial generation and iteration seamlessly
 
 ## Example
 

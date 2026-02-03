@@ -6,11 +6,20 @@ Extracts text from a screenshot using EasyOCR and saves to text.txt
 import os
 from pathlib import Path
 
-import easyocr
 from mcp.types import Tool
 
-# Initialize reader once (downloads models on first use to ~/.EasyOCR/)
-reader = easyocr.Reader(["en"], gpu=False)
+_reader = None
+
+
+def _get_reader():
+    """Create the EasyOCR reader lazily to avoid import-time failures."""
+    global _reader
+    if _reader is None:
+        import easyocr
+
+        # Initialize reader once (downloads models on first use to ~/.EasyOCR/)
+        _reader = easyocr.Reader(["en"], gpu=False)
+    return _reader
 
 # Get the directory paths
 TOOLS_DIR = Path(__file__).parent
@@ -50,8 +59,20 @@ async def ocr_extract_tool(image_path: str, output_filename: str = "text.txt") -
                 "message": f"Could not find image at: {image_path}"
             }
 
-        # Perform OCR with EasyOCR
-        # Returns list of tuples: (bbox, text, confidence)
+        try:
+            reader = _get_reader()
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": (
+                    "OCR engine failed to initialize. This usually means Torch "
+                    "is not available for this Python version. Use Python 3.11 "
+                    "or install a compatible Torch wheel."
+                )
+            }
+
+        # Perform OCR with EasyOCR. Returns (bbox, text, confidence) tuples.
         results = reader.readtext(image_path)
 
         # Extract text and confidences

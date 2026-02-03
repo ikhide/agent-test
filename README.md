@@ -65,6 +65,7 @@ User Command
 ```
 
 **Why Hub-and-Spoke?**
+
 - Orchestrator maintains control of the entire workflow
 - Consistent execution across all agents
 - Easy to add new agents without changing existing ones
@@ -80,11 +81,11 @@ agent-test/
 │       └── screen-agent.agent.md    # Screenshot + OCR agent
 ├── .vscode/
 │   └── mcp.json                     # MCP server configuration
-├── mcp/
+├── mcp_python/
 │   ├── server.js                    # MCP server (stdio)
 │   └── tools/
-│       ├── snapshot.js              # MCP1: Screenshot tool
-│       └── ocr-extract.js           # MCP2: OCR extraction tool
+│       ├── snapshot.py              # MCP1: Screenshot tool
+│       └── ocr-extract.py           # MCP2: OCR extraction tool
 ├── snapshots/                       # Screenshot output
 ├── output/                          # Text extraction output
 └── package.json
@@ -97,6 +98,7 @@ agent-test/
 **File:** `.github/agents/orchestrator.agent.md`
 
 The parent agent that:
+
 - Receives all user commands
 - Routes to appropriate sub-agents via handoffs
 - Waits for sub-agents to complete and return
@@ -107,6 +109,7 @@ The parent agent that:
 **File:** `.github/agents/screen-agent.agent.md`
 
 A specialized agent that:
+
 - Takes screenshots using `snapshot-tool` (MCP1)
 - Extracts text using `ocr-extract-tool` (MCP2)
 - Saves results to `output/text.txt`
@@ -116,10 +119,10 @@ A specialized agent that:
 
 **Location:** `mcp/tools/`
 
-| Tool | Description | Input | Output |
-|------|-------------|-------|--------|
-| `snapshot-tool` | Captures desktop screenshot | `filename` | `filePath`, `fileSize` |
-| `ocr-extract-tool` | Extracts text from image | `imagePath`, `outputFilename` | `text`, `confidence` |
+| Tool               | Description                 | Input                         | Output                 |
+| ------------------ | --------------------------- | ----------------------------- | ---------------------- |
+| `snapshot-tool`    | Captures desktop screenshot | `filename`                    | `filePath`, `fileSize` |
+| `ocr-extract-tool` | Extracts text from image    | `imagePath`, `outputFilename` | `text`, `confidence`   |
 
 ### 4. MCP Server
 
@@ -218,10 +221,10 @@ export const myToolDefinition = {
   inputSchema: {
     type: "object",
     properties: {
-      param1: { type: "string", description: "Description" }
+      param1: { type: "string", description: "Description" },
     },
-    required: ["param1"]
-  }
+    required: ["param1"],
+  },
 };
 
 export async function myTool(param1) {
@@ -248,25 +251,24 @@ case "my-tool":
 
 ## File Formats Reference
 
-| File | Location | Purpose |
-|------|----------|---------|
+| File         | Location          | Purpose                                    |
+| ------------ | ----------------- | ------------------------------------------ |
 | `*.agent.md` | `.github/agents/` | Define agent personas, tools, and handoffs |
-| `mcp.json` | `.vscode/` | Configure MCP servers for VS Code |
+| `mcp.json`   | `.vscode/`        | Configure MCP servers for VS Code          |
 
 ### Agent File Schema
 
 ```yaml
 ---
-name: agent-name              # Identifier
-description: What it does     # Shown in dropdown
-tools: ["tool1", "mcp/*"]     # Available tools
-infer: true|false             # Auto-select based on context
-handoffs:                     # Agents it can delegate to
+name: agent-name # Identifier
+description: What it does # Shown in dropdown
+tools: ["tool1", "mcp/*"] # Available tools
+infer: true|false # Auto-select based on context
+handoffs: # Agents it can delegate to
   - label: "Display Name"
     agent: "target-agent"
     prompt: "Instructions for handoff"
 ---
-
 # Markdown instructions for the agent
 ```
 

@@ -47,6 +47,7 @@ async def snapshot_tool(filename: str) -> dict:
             # PowerShell command for Windows screenshot
             ps_script = f"""
             Add-Type -AssemblyName System.Windows.Forms
+            Add-Type -AssemblyName System.Drawing
             [System.Windows.Forms.Screen]::PrimaryScreen | ForEach-Object {{
                 $bitmap = New-Object System.Drawing.Bitmap($_.Bounds.Width, $_.Bounds.Height)
                 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)

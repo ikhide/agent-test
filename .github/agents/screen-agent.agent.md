@@ -47,6 +47,46 @@ Provide a summary including:
 ### Step 4: Return to Orchestrator
 After completing the workflow, **hand off back to the orchestrator** so it can coordinate the next action.
 
+## JSON Summary Format
+
+On success:
+
+```
+{
+  "step": "screen-process",
+  "screenshot": { "path": "snapshots/screenshot-YYYYMMDD-HHMMSS.png", "size": <bytes> },
+  "ocr": { "output": "output/text.txt", "chars": <int>, "confidence": <percent>, "textPreview": "<first 200 chars>" }
+}
+```
+
+On screenshot failure:
+
+```
+{
+  "step": "screen-process",
+  "error": { "type": "screenshot_failed", "message": "<details>" }
+}
+```
+
+On OCR failure:
+
+```
+{
+  "step": "screen-process",
+  "screenshot": { "path": "snapshots/screenshot-YYYYMMDD-HHMMSS.png", "size": <bytes> },
+  "error": {
+    "type": "ocr_failed",
+    "message": "<details>",
+    "hint": "Use Python 3.11 or install a compatible CPU-only Torch wheel."
+  }
+}
+```
+
+## Automatic Return
+
+- Immediately hand off back to `orchestrator` with the JSON summary (success or error) after completing the workflow.
+- Do not wait for user approval to return.
+
 ## Error Handling
 
 - If Step 1 fails: Report "Screenshot capture failed" with error details
@@ -78,3 +118,4 @@ Workflow completed successfully.
 - ALWAYS pass the exact filePath from Step 1 to Step 2
 - NEVER skip steps or change the order
 - ALWAYS report both success and failure states
+ - ALWAYS produce a single JSON summary and return control automatically
